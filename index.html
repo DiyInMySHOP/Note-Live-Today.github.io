@@ -1,0 +1,276 @@
+import React, { useState } from 'react';
+import { Calendar, Edit2, Trash2, Plus, Save, X } from 'lucide-react';
+
+export default function LiveScheduleApp() {
+  const daysOfWeek = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'];
+  const today = daysOfWeek[new Date().getDay()];
+  
+  const [schedules, setSchedules] = useState([
+    { id: 1, day: 'จันทร์', tiktok: '19:00-21:00', youtube: '—', note: 'เปิดสโปตคุยอดีต' },
+    { id: 2, day: 'อังคาร', tiktok: '19:00-21:00', youtube: '—', note: 'วันวาด คนดูเยอะ' },
+    { id: 3, day: 'พุธ', tiktok: '18:30-20:00', youtube: '20:00-21:30', note: 'ไลฟ์สดทำ TikTok → YT' },
+    { id: 4, day: 'พฤหัสบดี', tiktok: '19:00-21:00', youtube: '—', note: 'คนพร้อมช้อป' },
+    { id: 5, day: 'ศุกร์', tiktok: '20:00-22:00', youtube: '19:00-19:45', note: 'คนใช้เงินและลด' },
+    { id: 6, day: 'เสาร์', tiktok: '18:00-20:00', youtube: '14:00-15:30', note: 'คนว่างมา' },
+    { id: 7, day: 'อาทิตย์', tiktok: '19:00-21:00', youtube: '—', note: 'วันยอดขายดีมาก' }
+  ]);
+
+  const todaySchedule = schedules.find(s => s.day === today);
+
+  const [editingId, setEditingId] = useState(null);
+  const [editForm, setEditForm] = useState({ day: '', tiktok: '', youtube: '', note: '' });
+  const [isAdding, setIsAdding] = useState(false);
+  const [newForm, setNewForm] = useState({ day: '', tiktok: '', youtube: '', note: '' });
+
+  const handleEdit = (schedule) => {
+    setEditingId(schedule.id);
+    setEditForm({ ...schedule });
+  };
+
+  const handleSave = () => {
+    setSchedules(schedules.map(s => s.id === editingId ? editForm : s));
+    setEditingId(null);
+  };
+
+  const handleDelete = (id) => {
+    if (window.confirm('ต้องการลบรายการนี้หรือไม่?')) {
+      setSchedules(schedules.filter(s => s.id !== id));
+    }
+  };
+
+  const handleAdd = () => {
+    if (newForm.day && newForm.tiktok) {
+      const newSchedule = {
+        id: Date.now(),
+        ...newForm
+      };
+      setSchedules([...schedules, newSchedule]);
+      setNewForm({ day: '', tiktok: '', youtube: '', note: '' });
+      setIsAdding(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 p-4 sm:p-8">
+      <div className="max-w-6xl mx-auto">
+        {/* Header */}
+        <div className="bg-white rounded-2xl shadow-xl p-6 mb-6">
+          <div className="flex items-center gap-3 mb-2">
+            <Calendar className="w-8 h-8 text-purple-600" />
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+              ตารางรวม TikTok + YouTube
+            </h1>
+          </div>
+          <p className="text-gray-600 ml-11">รูปแบบ: ไลฟ์ TikTok ทุกวัน + YouTube 2-3 ครั้ง/สัปดาห์</p>
+        </div>
+
+        {/* Today's Schedule Reminder */}
+        {todaySchedule && (
+          <div className="bg-gradient-to-r from-purple-600 to-pink-600 rounded-2xl shadow-xl p-6 mb-6 text-white">
+            <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
+              🎯 วันนี้ ({today}) ต้องไลฟ์:
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="bg-white/20 rounded-xl p-4 backdrop-blur-sm">
+                <div className="text-sm opacity-90 mb-1">📱 TikTok</div>
+                <div className="text-2xl font-bold">{todaySchedule.tiktok}</div>
+              </div>
+              {todaySchedule.youtube !== '—' && (
+                <div className="bg-white/20 rounded-xl p-4 backdrop-blur-sm">
+                  <div className="text-sm opacity-90 mb-1">🎥 YouTube</div>
+                  <div className="text-2xl font-bold">{todaySchedule.youtube}</div>
+                </div>
+              )}
+            </div>
+            {todaySchedule.note && (
+              <div className="mt-4 bg-white/10 rounded-xl p-3 backdrop-blur-sm">
+                <span className="text-sm opacity-90">💡 หมายเหตุ: </span>
+                <span className="font-medium">{todaySchedule.note}</span>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Add Button */}
+        <div className="mb-6">
+          <button
+            onClick={() => setIsAdding(true)}
+            className="flex items-center gap-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-3 rounded-xl hover:shadow-lg transition-all duration-300 font-medium"
+          >
+            <Plus className="w-5 h-5" />
+            เพิ่มวันใหม่
+          </button>
+        </div>
+
+        {/* Add Form */}
+        {isAdding && (
+          <div className="bg-white rounded-2xl shadow-xl p-6 mb-6 border-2 border-purple-300">
+            <h3 className="text-xl font-bold text-gray-800 mb-4">เพิ่มวันใหม่</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <input
+                type="text"
+                placeholder="วัน (เช่น จันทร์)"
+                value={newForm.day}
+                onChange={(e) => setNewForm({ ...newForm, day: e.target.value })}
+                className="px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-purple-500 focus:outline-none"
+              />
+              <input
+                type="text"
+                placeholder="TikTok ไลฟ์ (เช่น 19:00-21:00)"
+                value={newForm.tiktok}
+                onChange={(e) => setNewForm({ ...newForm, tiktok: e.target.value })}
+                className="px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-purple-500 focus:outline-none"
+              />
+              <input
+                type="text"
+                placeholder="YouTube ไลฟ์ (เช่น 20:00-21:30 หรือ —)"
+                value={newForm.youtube}
+                onChange={(e) => setNewForm({ ...newForm, youtube: e.target.value })}
+                className="px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-purple-500 focus:outline-none"
+              />
+              <input
+                type="text"
+                placeholder="หมายเหตุ"
+                value={newForm.note}
+                onChange={(e) => setNewForm({ ...newForm, note: e.target.value })}
+                className="px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-purple-500 focus:outline-none"
+              />
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={handleAdd}
+                className="flex items-center gap-2 bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition-colors"
+              >
+                <Save className="w-4 h-4" />
+                บันทึก
+              </button>
+              <button
+                onClick={() => {
+                  setIsAdding(false);
+                  setNewForm({ day: '', tiktok: '', youtube: '', note: '' });
+                }}
+                className="flex items-center gap-2 bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 transition-colors"
+              >
+                <X className="w-4 h-4" />
+                ยกเลิก
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Schedule Table */}
+        <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gradient-to-r from-purple-600 to-pink-600 text-white">
+                <tr>
+                  <th className="px-6 py-4 text-left font-semibold">วัน</th>
+                  <th className="px-6 py-4 text-left font-semibold">TikTok ไลฟ์</th>
+                  <th className="px-6 py-4 text-left font-semibold">YouTube ไลฟ์</th>
+                  <th className="px-6 py-4 text-left font-semibold">หมายเหตุ</th>
+                  <th className="px-6 py-4 text-center font-semibold">จัดการ</th>
+                </tr>
+              </thead>
+              <tbody>
+                {schedules.map((schedule, index) => (
+                  <tr 
+                    key={schedule.id} 
+                    className={`border-b border-gray-200 hover:bg-purple-50 transition-colors ${
+                      schedule.day === today ? 'bg-yellow-100 border-l-4 border-l-yellow-500' : 
+                      index % 2 === 0 ? 'bg-gray-50' : 'bg-white'
+                    }`}
+                  >
+                    {editingId === schedule.id ? (
+                      <>
+                        <td className="px-6 py-4">
+                          <input
+                            type="text"
+                            value={editForm.day}
+                            onChange={(e) => setEditForm({ ...editForm, day: e.target.value })}
+                            className="w-full px-3 py-2 border-2 border-purple-300 rounded-lg focus:border-purple-500 focus:outline-none"
+                          />
+                        </td>
+                        <td className="px-6 py-4">
+                          <input
+                            type="text"
+                            value={editForm.tiktok}
+                            onChange={(e) => setEditForm({ ...editForm, tiktok: e.target.value })}
+                            className="w-full px-3 py-2 border-2 border-purple-300 rounded-lg focus:border-purple-500 focus:outline-none"
+                          />
+                        </td>
+                        <td className="px-6 py-4">
+                          <input
+                            type="text"
+                            value={editForm.youtube}
+                            onChange={(e) => setEditForm({ ...editForm, youtube: e.target.value })}
+                            className="w-full px-3 py-2 border-2 border-purple-300 rounded-lg focus:border-purple-500 focus:outline-none"
+                          />
+                        </td>
+                        <td className="px-6 py-4">
+                          <input
+                            type="text"
+                            value={editForm.note}
+                            onChange={(e) => setEditForm({ ...editForm, note: e.target.value })}
+                            className="w-full px-3 py-2 border-2 border-purple-300 rounded-lg focus:border-purple-500 focus:outline-none"
+                          />
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex gap-2 justify-center">
+                            <button
+                              onClick={handleSave}
+                              className="p-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                              title="บันทึก"
+                            >
+                              <Save className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => setEditingId(null)}
+                              className="p-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
+                              title="ยกเลิก"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </>
+                    ) : (
+                      <>
+                        <td className="px-6 py-4 font-semibold text-purple-700">
+                          {schedule.day}
+                          {schedule.day === today && <span className="ml-2 text-xs bg-yellow-400 text-yellow-900 px-2 py-1 rounded-full">วันนี้</span>}
+                        </td>
+                        <td className="px-6 py-4 text-gray-700">{schedule.tiktok}</td>
+                        <td className="px-6 py-4 text-gray-700">{schedule.youtube}</td>
+                        <td className="px-6 py-4 text-gray-600">{schedule.note}</td>
+                        <td className="px-6 py-4">
+                          <div className="flex gap-2 justify-center">
+                            <button
+                              onClick={() => handleEdit(schedule)}
+                              className="p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                              title="แก้ไข"
+                            >
+                              <Edit2 className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => handleDelete(schedule.id)}
+                              className="p-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                              title="ลบ"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </>
+                    )}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+
+      </div>
+    </div>
+  );
+}
