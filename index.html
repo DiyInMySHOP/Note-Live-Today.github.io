@@ -59,15 +59,13 @@ export default function LiveScheduleApp() {
   };
 
   const handleSave = () => {
-    const newSchedules = schedules.map(s => s.id === editingId ? editForm : s);
-    saveSchedules(newSchedules);
+    setSchedules(schedules.map(s => s.id === editingId ? editForm : s));
     setEditingId(null);
   };
 
   const handleDelete = (id) => {
     if (window.confirm('ต้องการลบรายการนี้หรือไม่?')) {
-      const newSchedules = schedules.filter(s => s.id !== id);
-      saveSchedules(newSchedules);
+      setSchedules(schedules.filter(s => s.id !== id));
     }
   };
 
@@ -77,35 +75,11 @@ export default function LiveScheduleApp() {
         id: Date.now(),
         ...newForm
       };
-      const newSchedules = [...schedules, newSchedule];
-      saveSchedules(newSchedules);
+      setSchedules([...schedules, newSchedule]);
       setNewForm({ day: '', tiktok: '', youtube: '', note: '' });
       setIsAdding(false);
     }
   };
-
-  const handleReset = async () => {
-    if (window.confirm('ต้องการรีเซ็ตกลับไปเป็นค่าเริ่มต้นหรือไม่?\n(ข้อมูลที่แก้ไขจะหายทั้งหมด)')) {
-      try {
-        await window.storage.delete('schedules');
-        setSchedules(defaultSchedules);
-        alert('รีเซ็ตข้อมูลสำเร็จ!');
-      } catch (error) {
-        console.error('รีเซ็ตไม่สำเร็จ:', error);
-      }
-    }
-  };
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 p-4 sm:p-8 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-purple-600 mx-auto mb-4"></div>
-          <p className="text-gray-600 text-lg">กำลังโหลดข้อมูล...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 p-4 sm:p-8">
