@@ -1,277 +1,339 @@
-<!DOCTYPE html>
-<html lang="th">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ตารางรวม TikTok + YouTube</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        * {
-            font-family: 'Sarabun', sans-serif;
-        }
-        body {
-            font-family: 'Sarabun', sans-serif;
-        }
-    </style>
-</head>
-<body class="bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 min-h-screen p-4 sm:p-8">
-    <div id="app" class="max-w-6xl mx-auto"></div>
+import React, { useState } from 'react';
+import { Calendar, Edit2, Trash2, Plus, Save, X } from 'lucide-react';
 
-    <script>
-        const daysOfWeek = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'];
-        const today = daysOfWeek[new Date().getDay()];
+export default function LiveScheduleApp() {
+  const daysOfWeek = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'];
+  const today = daysOfWeek[new Date().getDay()];
+  
+  const defaultSchedules = [
+    { id: 1, day: 'จันทร์', tiktok: '19:00-21:00', youtube: '—', note: 'เปิดสัปดาห์ยอดโอเค' },
+    { id: 2, day: 'อังคาร', tiktok: '19:00-21:00', youtube: '—', note: 'วันว่าง คนดูเยอะ' },
+    { id: 3, day: 'พุธ', tiktok: '18:30-20:00', youtube: '20:00-21:30', note: 'ไลฟ์ติดกัน TikTok → YT' },
+    { id: 4, day: 'พฤหัสบดี', tiktok: '19:00-21:00', youtube: '—', note: 'คนพร้อมช้อป' },
+    { id: 5, day: 'ศุกร์', tiktok: '20:00-22:00', youtube: '19:00-19:45', note: 'คนใช้เงินเยอะสุด' },
+    { id: 6, day: 'เสาร์', tiktok: '18:00-20:00', youtube: '14:00-15:30', note: 'คนว่างดูมาก' },
+    { id: 7, day: 'อาทิตย์', tiktok: '19:00-21:00', youtube: '—', note: 'วันยอดขายดีมาก' }
+  ];
 
-        let schedules = [
-            { id: 1, day: 'จันทร์', tiktok: '19:00-21:00', youtube: '—', note: 'เปิดสัปดาห์ยอดโอเค' },
-            { id: 2, day: 'อังคาร', tiktok: '19:00-21:00', youtube: '—', note: 'วันว่าง คนดูเยอะ' },
-            { id: 3, day: 'พุธ', tiktok: '18:30-20:00', youtube: '20:00-21:30', note: 'ไลฟ์ติดกัน TikTok → YT' },
-            { id: 4, day: 'พฤหัสบดี', tiktok: '19:00-21:00', youtube: '—', note: 'คนพร้อมช้อป' },
-            { id: 5, day: 'ศุกร์', tiktok: '20:00-22:00', youtube: '19:00-19:45', note: 'คนใช้เงินเยอะสุด' },
-            { id: 6, day: 'เสาร์', tiktok: '18:00-20:00', youtube: '14:00-15:30', note: 'คนว่างดูมาก' },
-            { id: 7, day: 'อาทิตย์', tiktok: '19:00-21:00', youtube: '—', note: 'วันยอดขายดีมาก' }
-        ];
+  const [schedules, setSchedules] = useState(defaultSchedules);
+  const [isLoading, setIsLoading] = useState(true);
 
-        let editingId = null;
-        let isAdding = false;
+  // โหลดข้อมูลจาก storage เมื่อเริ่มต้น
+  React.useEffect(() => {
+    loadSchedules();
+  }, []);
 
-        function render() {
-            const todaySchedule = schedules.find(s => s.day === today);
-            const app = document.getElementById('app');
-            
-            app.innerHTML = `
-                <!-- Header -->
-                <div class="bg-white rounded-2xl shadow-xl p-6 mb-6">
-                    <div class="flex items-center gap-3 mb-2">
-                        <svg class="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                            <line x1="16" y1="2" x2="16" y2="6"></line>
-                            <line x1="8" y1="2" x2="8" y2="6"></line>
-                            <line x1="3" y1="10" x2="21" y2="10"></line>
-                        </svg>
-                        <h1 class="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-                            ตารางรวม TikTok + YouTube
-                        </h1>
-                    </div>
-                    <p class="text-gray-600 ml-11">รูปแบบ: ไลฟ์ TikTok ทุกวัน + YouTube 2-3 ครั้ง/สัปดาห์</p>
+  const loadSchedules = async () => {
+    try {
+      const result = await window.storage.get('schedules');
+      if (result && result.value) {
+        setSchedules(JSON.parse(result.value));
+      }
+    } catch (error) {
+      console.log('ใช้ข้อมูลเริ่มต้น');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const saveSchedules = async (newSchedules) => {
+    try {
+      await window.storage.set('schedules', JSON.stringify(newSchedules));
+      setSchedules(newSchedules);
+    } catch (error) {
+      console.error('บันทึกไม่สำเร็จ:', error);
+      alert('เกิดข้อผิดพลาดในการบันทึก กรุณาลองใหม่');
+    }
+  };
+
+  const todaySchedule = schedules.find(s => s.day === today);
+
+  const [editingId, setEditingId] = useState(null);
+  const [editForm, setEditForm] = useState({ day: '', tiktok: '', youtube: '', note: '' });
+  const [isAdding, setIsAdding] = useState(false);
+  const [newForm, setNewForm] = useState({ day: '', tiktok: '', youtube: '', note: '' });
+
+  const handleEdit = (schedule) => {
+    setEditingId(schedule.id);
+    setEditForm({ ...schedule });
+  };
+
+  const handleSave = () => {
+    const newSchedules = schedules.map(s => s.id === editingId ? editForm : s);
+    saveSchedules(newSchedules);
+    setEditingId(null);
+  };
+
+  const handleDelete = (id) => {
+    if (window.confirm('ต้องการลบรายการนี้หรือไม่?')) {
+      const newSchedules = schedules.filter(s => s.id !== id);
+      saveSchedules(newSchedules);
+    }
+  };
+
+  const handleAdd = () => {
+    if (newForm.day && newForm.tiktok) {
+      const newSchedule = {
+        id: Date.now(),
+        ...newForm
+      };
+      const newSchedules = [...schedules, newSchedule];
+      saveSchedules(newSchedules);
+      setNewForm({ day: '', tiktok: '', youtube: '', note: '' });
+      setIsAdding(false);
+    }
+  };
+
+  const handleReset = async () => {
+    if (window.confirm('ต้องการรีเซ็ตกลับไปเป็นค่าเริ่มต้นหรือไม่?\n(ข้อมูลที่แก้ไขจะหายทั้งหมด)')) {
+      try {
+        await window.storage.delete('schedules');
+        setSchedules(defaultSchedules);
+        alert('รีเซ็ตข้อมูลสำเร็จ!');
+      } catch (error) {
+        console.error('รีเซ็ตไม่สำเร็จ:', error);
+      }
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 p-4 sm:p-8 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-purple-600 mx-auto mb-4"></div>
+          <p className="text-gray-600 text-lg">กำลังโหลดข้อมูล...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 p-4 sm:p-8">
+      <div className="max-w-6xl mx-auto">
+        {/* Header */}
+        <div className="bg-white rounded-2xl shadow-xl p-6 mb-6">
+          <div className="flex items-center gap-3 mb-2">
+            <Calendar className="w-8 h-8 text-purple-600" />
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+              ตารางรวม TikTok + YouTube
+            </h1>
+          </div>
+          <p className="text-gray-600 ml-11">รูปแบบ: ไลฟ์ TikTok ทุกวัน + YouTube 2-3 ครั้ง/สัปดาห์</p>
+        </div>
+
+        {/* Today's Schedule Reminder */}
+        {todaySchedule && (
+          <div className="bg-gradient-to-r from-purple-600 to-pink-600 rounded-2xl shadow-xl p-6 mb-6 text-white">
+            <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
+              🎯 วันนี้ ({today}) ต้องไลฟ์:
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="bg-white/20 rounded-xl p-4 backdrop-blur-sm">
+                <div className="text-sm opacity-90 mb-1">📱 TikTok</div>
+                <div className="text-2xl font-bold">{todaySchedule.tiktok}</div>
+              </div>
+              {todaySchedule.youtube !== '—' && (
+                <div className="bg-white/20 rounded-xl p-4 backdrop-blur-sm">
+                  <div className="text-sm opacity-90 mb-1">🎥 YouTube</div>
+                  <div className="text-2xl font-bold">{todaySchedule.youtube}</div>
                 </div>
+              )}
+            </div>
+            {todaySchedule.note && (
+              <div className="mt-4 bg-white/10 rounded-xl p-3 backdrop-blur-sm">
+                <span className="text-sm opacity-90">💡 หมายเหตุ: </span>
+                <span className="font-medium">{todaySchedule.note}</span>
+              </div>
+            )}
+          </div>
+        )}
 
-                <!-- Today's Schedule Reminder -->
-                ${todaySchedule ? `
-                <div class="bg-gradient-to-r from-purple-600 to-pink-600 rounded-2xl shadow-xl p-6 mb-6 text-white">
-                    <h2 class="text-2xl font-bold mb-4 flex items-center gap-2">
-                        🎯 วันนี้ (${today}) ต้องไลฟ์:
-                    </h2>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div class="bg-white/20 rounded-xl p-4 backdrop-blur-sm">
-                            <div class="text-sm opacity-90 mb-1">📱 TikTok</div>
-                            <div class="text-2xl font-bold">${todaySchedule.tiktok}</div>
-                        </div>
-                        ${todaySchedule.youtube !== '—' ? `
-                        <div class="bg-white/20 rounded-xl p-4 backdrop-blur-sm">
-                            <div class="text-sm opacity-90 mb-1">🎥 YouTube</div>
-                            <div class="text-2xl font-bold">${todaySchedule.youtube}</div>
-                        </div>
-                        ` : ''}
-                    </div>
-                    ${todaySchedule.note ? `
-                    <div class="mt-4 bg-white/10 rounded-xl p-3 backdrop-blur-sm">
-                        <span class="text-sm opacity-90">💡 หมายเหตุ: </span>
-                        <span class="font-medium">${todaySchedule.note}</span>
-                    </div>
-                    ` : ''}
-                </div>
-                ` : ''}
+        {/* Add Button */}
+        <div className="mb-6 flex gap-3">
+          <button
+            onClick={() => setIsAdding(true)}
+            className="flex items-center gap-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-3 rounded-xl hover:shadow-lg transition-all duration-300 font-medium"
+          >
+            <Plus className="w-5 h-5" />
+            เพิ่มวันใหม่
+          </button>
+          <button
+            onClick={handleReset}
+            className="flex items-center gap-2 bg-gray-500 text-white px-6 py-3 rounded-xl hover:bg-gray-600 hover:shadow-lg transition-all duration-300 font-medium"
+          >
+            🔄 รีเซ็ตข้อมูล
+          </button>
+        </div>
 
-                <!-- Add Button -->
-                <div class="mb-6">
-                    <button onclick="toggleAddForm()" class="flex items-center gap-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-3 rounded-xl hover:shadow-lg transition-all duration-300 font-medium">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <line x1="12" y1="5" x2="12" y2="19"></line>
-                            <line x1="5" y1="12" x2="19" y2="12"></line>
-                        </svg>
-                        เพิ่มวันใหม่
-                    </button>
-                </div>
+        {/* Add Form */}
+        {isAdding && (
+          <div className="bg-white rounded-2xl shadow-xl p-6 mb-6 border-2 border-purple-300">
+            <h3 className="text-xl font-bold text-gray-800 mb-4">เพิ่มวันใหม่</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <input
+                type="text"
+                placeholder="วัน (เช่น จันทร์)"
+                value={newForm.day}
+                onChange={(e) => setNewForm({ ...newForm, day: e.target.value })}
+                className="px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-purple-500 focus:outline-none"
+              />
+              <input
+                type="text"
+                placeholder="TikTok ไลฟ์ (เช่น 19:00-21:00)"
+                value={newForm.tiktok}
+                onChange={(e) => setNewForm({ ...newForm, tiktok: e.target.value })}
+                className="px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-purple-500 focus:outline-none"
+              />
+              <input
+                type="text"
+                placeholder="YouTube ไลฟ์ (เช่น 20:00-21:30 หรือ —)"
+                value={newForm.youtube}
+                onChange={(e) => setNewForm({ ...newForm, youtube: e.target.value })}
+                className="px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-purple-500 focus:outline-none"
+              />
+              <input
+                type="text"
+                placeholder="หมายเหตุ"
+                value={newForm.note}
+                onChange={(e) => setNewForm({ ...newForm, note: e.target.value })}
+                className="px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-purple-500 focus:outline-none"
+              />
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={handleAdd}
+                className="flex items-center gap-2 bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition-colors"
+              >
+                <Save className="w-4 h-4" />
+                บันทึก
+              </button>
+              <button
+                onClick={() => {
+                  setIsAdding(false);
+                  setNewForm({ day: '', tiktok: '', youtube: '', note: '' });
+                }}
+                className="flex items-center gap-2 bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 transition-colors"
+              >
+                <X className="w-4 h-4" />
+                ยกเลิก
+              </button>
+            </div>
+          </div>
+        )}
 
-                <!-- Add Form -->
-                ${isAdding ? `
-                <div class="bg-white rounded-2xl shadow-xl p-6 mb-6 border-2 border-purple-300">
-                    <h3 class="text-xl font-bold text-gray-800 mb-4">เพิ่มวันใหม่</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                        <input type="text" id="newDay" placeholder="วัน (เช่น จันทร์)" class="px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-purple-500 focus:outline-none">
-                        <input type="text" id="newTiktok" placeholder="TikTok ไลฟ์ (เช่น 19:00-21:00)" class="px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-purple-500 focus:outline-none">
-                        <input type="text" id="newYoutube" placeholder="YouTube ไลฟ์ (เช่น 20:00-21:30 หรือ —)" class="px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-purple-500 focus:outline-none">
-                        <input type="text" id="newNote" placeholder="หมายเหตุ" class="px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-purple-500 focus:outline-none">
-                    </div>
-                    <div class="flex gap-3">
-                        <button onclick="addSchedule()" class="flex items-center gap-2 bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition-colors">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"></path>
-                                <polyline points="17 21 17 13 7 13 7 21"></polyline>
-                                <polyline points="7 3 7 8 15 8"></polyline>
-                            </svg>
-                            บันทึก
-                        </button>
-                        <button onclick="toggleAddForm()" class="flex items-center gap-2 bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 transition-colors">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <line x1="18" y1="6" x2="6" y2="18"></line>
-                                <line x1="6" y1="6" x2="18" y2="18"></line>
-                            </svg>
-                            ยกเลิก
-                        </button>
-                    </div>
-                </div>
-                ` : ''}
+        {/* Schedule Table */}
+        <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gradient-to-r from-purple-600 to-pink-600 text-white">
+                <tr>
+                  <th className="px-6 py-4 text-left font-semibold">วัน</th>
+                  <th className="px-6 py-4 text-left font-semibold">TikTok ไลฟ์</th>
+                  <th className="px-6 py-4 text-left font-semibold">YouTube ไลฟ์</th>
+                  <th className="px-6 py-4 text-left font-semibold">หมายเหตุ</th>
+                  <th className="px-6 py-4 text-center font-semibold">จัดการ</th>
+                </tr>
+              </thead>
+              <tbody>
+                {schedules.map((schedule, index) => (
+                  <tr 
+                    key={schedule.id} 
+                    className={`border-b border-gray-200 hover:bg-purple-50 transition-colors ${
+                      schedule.day === today ? 'bg-yellow-100 border-l-4 border-l-yellow-500' : 
+                      index % 2 === 0 ? 'bg-gray-50' : 'bg-white'
+                    }`}
+                  >
+                    {editingId === schedule.id ? (
+                      <>
+                        <td className="px-6 py-4">
+                          <input
+                            type="text"
+                            value={editForm.day}
+                            onChange={(e) => setEditForm({ ...editForm, day: e.target.value })}
+                            className="w-full px-3 py-2 border-2 border-purple-300 rounded-lg focus:border-purple-500 focus:outline-none"
+                          />
+                        </td>
+                        <td className="px-6 py-4">
+                          <input
+                            type="text"
+                            value={editForm.tiktok}
+                            onChange={(e) => setEditForm({ ...editForm, tiktok: e.target.value })}
+                            className="w-full px-3 py-2 border-2 border-purple-300 rounded-lg focus:border-purple-500 focus:outline-none"
+                          />
+                        </td>
+                        <td className="px-6 py-4">
+                          <input
+                            type="text"
+                            value={editForm.youtube}
+                            onChange={(e) => setEditForm({ ...editForm, youtube: e.target.value })}
+                            className="w-full px-3 py-2 border-2 border-purple-300 rounded-lg focus:border-purple-500 focus:outline-none"
+                          />
+                        </td>
+                        <td className="px-6 py-4">
+                          <input
+                            type="text"
+                            value={editForm.note}
+                            onChange={(e) => setEditForm({ ...editForm, note: e.target.value })}
+                            className="w-full px-3 py-2 border-2 border-purple-300 rounded-lg focus:border-purple-500 focus:outline-none"
+                          />
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex gap-2 justify-center">
+                            <button
+                              onClick={handleSave}
+                              className="p-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                              title="บันทึก"
+                            >
+                              <Save className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => setEditingId(null)}
+                              className="p-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
+                              title="ยกเลิก"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </>
+                    ) : (
+                      <>
+                        <td className="px-6 py-4 font-semibold text-purple-700">
+                          {schedule.day}
+                          {schedule.day === today && <span className="ml-2 text-xs bg-yellow-400 text-yellow-900 px-2 py-1 rounded-full">วันนี้</span>}
+                        </td>
+                        <td className="px-6 py-4 text-gray-700">{schedule.tiktok}</td>
+                        <td className="px-6 py-4 text-gray-700">{schedule.youtube}</td>
+                        <td className="px-6 py-4 text-gray-600">{schedule.note}</td>
+                        <td className="px-6 py-4">
+                          <div className="flex gap-2 justify-center">
+                            <button
+                              onClick={() => handleEdit(schedule)}
+                              className="p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                              title="แก้ไข"
+                            >
+                              <Edit2 className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => handleDelete(schedule.id)}
+                              className="p-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                              title="ลบ"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </>
+                    )}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
 
-                <!-- Schedule Table -->
-                <div class="bg-white rounded-2xl shadow-xl overflow-hidden">
-                    <div class="overflow-x-auto">
-                        <table class="w-full">
-                            <thead class="bg-gradient-to-r from-purple-600 to-pink-600 text-white">
-                                <tr>
-                                    <th class="px-6 py-4 text-left font-semibold">วัน</th>
-                                    <th class="px-6 py-4 text-left font-semibold">TikTok ไลฟ์</th>
-                                    <th class="px-6 py-4 text-left font-semibold">YouTube ไลฟ์</th>
-                                    <th class="px-6 py-4 text-left font-semibold">หมายเหตุ</th>
-                                    <th class="px-6 py-4 text-center font-semibold">จัดการ</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${schedules.map((schedule, index) => {
-                                    const isToday = schedule.day === today;
-                                    const bgClass = isToday ? 'bg-yellow-100 border-l-4 border-l-yellow-500' : 
-                                                  index % 2 === 0 ? 'bg-gray-50' : 'bg-white';
-                                    
-                                    if (editingId === schedule.id) {
-                                        return `
-                                        <tr class="border-b border-gray-200 ${bgClass}">
-                                            <td class="px-6 py-4">
-                                                <input type="text" id="editDay" value="${schedule.day}" class="w-full px-3 py-2 border-2 border-purple-300 rounded-lg focus:border-purple-500 focus:outline-none">
-                                            </td>
-                                            <td class="px-6 py-4">
-                                                <input type="text" id="editTiktok" value="${schedule.tiktok}" class="w-full px-3 py-2 border-2 border-purple-300 rounded-lg focus:border-purple-500 focus:outline-none">
-                                            </td>
-                                            <td class="px-6 py-4">
-                                                <input type="text" id="editYoutube" value="${schedule.youtube}" class="w-full px-3 py-2 border-2 border-purple-300 rounded-lg focus:border-purple-500 focus:outline-none">
-                                            </td>
-                                            <td class="px-6 py-4">
-                                                <input type="text" id="editNote" value="${schedule.note}" class="w-full px-3 py-2 border-2 border-purple-300 rounded-lg focus:border-purple-500 focus:outline-none">
-                                            </td>
-                                            <td class="px-6 py-4">
-                                                <div class="flex gap-2 justify-center">
-                                                    <button onclick="saveEdit()" class="p-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors" title="บันทึก">
-                                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"></path>
-                                                            <polyline points="17 21 17 13 7 13 7 21"></polyline>
-                                                            <polyline points="7 3 7 8 15 8"></polyline>
-                                                        </svg>
-                                                    </button>
-                                                    <button onclick="cancelEdit()" class="p-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors" title="ยกเลิก">
-                                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <line x1="18" y1="6" x2="6" y2="18"></line>
-                                                            <line x1="6" y1="6" x2="18" y2="18"></line>
-                                                        </svg>
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                        `;
-                                    }
-                                    
-                                    return `
-                                    <tr class="border-b border-gray-200 hover:bg-purple-50 transition-colors ${bgClass}">
-                                        <td class="px-6 py-4 font-semibold text-purple-700">
-                                            ${schedule.day}
-                                            ${isToday ? '<span class="ml-2 text-xs bg-yellow-400 text-yellow-900 px-2 py-1 rounded-full">วันนี้</span>' : ''}
-                                        </td>
-                                        <td class="px-6 py-4 text-gray-700">${schedule.tiktok}</td>
-                                        <td class="px-6 py-4 text-gray-700">${schedule.youtube}</td>
-                                        <td class="px-6 py-4 text-gray-600">${schedule.note}</td>
-                                        <td class="px-6 py-4">
-                                            <div class="flex gap-2 justify-center">
-                                                <button onclick="startEdit(${schedule.id})" class="p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors" title="แก้ไข">
-                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"></path>
-                                                        <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                                                    </svg>
-                                                </button>
-                                                <button onclick="deleteSchedule(${schedule.id})" class="p-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors" title="ลบ">
-                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <polyline points="3 6 5 6 21 6"></polyline>
-                                                        <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"></path>
-                                                    </svg>
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    `;
-                                }).join('')}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            `;
-        }
 
-        function toggleAddForm() {
-            isAdding = !isAdding;
-            render();
-        }
-
-        function addSchedule() {
-            const day = document.getElementById('newDay').value;
-            const tiktok = document.getElementById('newTiktok').value;
-            const youtube = document.getElementById('newYoutube').value || '—';
-            const note = document.getElementById('newNote').value;
-
-            if (day && tiktok) {
-                schedules.push({
-                    id: Date.now(),
-                    day,
-                    tiktok,
-                    youtube,
-                    note
-                });
-                isAdding = false;
-                render();
-            }
-        }
-
-        function startEdit(id) {
-            editingId = id;
-            render();
-        }
-
-        function saveEdit() {
-            const day = document.getElementById('editDay').value;
-            const tiktok = document.getElementById('editTiktok').value;
-            const youtube = document.getElementById('editYoutube').value;
-            const note = document.getElementById('editNote').value;
-
-            schedules = schedules.map(s => 
-                s.id === editingId ? { ...s, day, tiktok, youtube, note } : s
-            );
-            editingId = null;
-            render();
-        }
-
-        function cancelEdit() {
-            editingId = null;
-            render();
-        }
-
-        function deleteSchedule(id) {
-            if (confirm('ต้องการลบรายการนี้หรือไม่?')) {
-                schedules = schedules.filter(s => s.id !== id);
-                render();
-            }
-        }
-
-        // Initial render
-        render();
-    </script>
-</body>
-</html>
+      </div>
+    </div>
+  );
+}
